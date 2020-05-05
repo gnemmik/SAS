@@ -46,9 +46,9 @@ Nous allons maintenant procéder à la mise en place des containers **lxc**. Tou
 
     root@debian:~# apt-get install lxc lxctl lxc-tests lxc-templates  
 
-### 2.2 Configuration réseau des containers
+### 2.2 Configuration réseau par défaut des containers
 
-Par défaut sur Debian la configuration réseau pour les containers est désactivée, alors pour avoir du réseau dans nos containers, nous devons mettre à jour le fichier de configuration de **lxc** comme ci-dessous:  
+Par défaut sur Debian la configuration réseau pour les containers est désactivée, alors pour avoir du réseau dans nos containers, nous devons mettre à jour le fichier de configuration par défaut des containers de **lxc** comme ci-dessous:  
 
 D'abord le fichier **/etc/lxc/default.conf** : 
 
@@ -58,6 +58,8 @@ D'abord le fichier **/etc/lxc/default.conf** :
     lxc.net.0.hwaddr = 00:16:3e:xx:xx:xx
     lxc.apparmor.profile = generated
     lxc.apparmor.allow_nesting = 1
+
+**veth** : utilisation d’un bridge spécifié par lxc.network.link.
 
 Et mettre à **true** l'option **USE_LXC_BRIDGE** dans le fichier **/etc/default/lxc** :  
     
@@ -153,7 +155,7 @@ Pour arrêter le container **c1** :
 
 ### 2.4 Clonage des containers
 
-Nous allons maintenant cloner **c1** en **c2** puis en **c3** :
+Nous allons maintenant cloner **c1** en **c2** puis en **c3** (remarque : il faut au préalable arrêter **c1**) :
 
     root@debian:~# lxc-copy -n c1 -N c2
     root@debian:~# lxc-copy -n c1 -N c3
@@ -182,7 +184,138 @@ Les containers sont connectés les uns aux autres à l'aide d'un switch virtuel 
 >Interconnexion par pont :  
 >  * Un pont divise le réseau en plusieurs domaines de collision distincts  
 >  * Chaque domaine de collision correspond à un segment connecté à un port du pont  
->  * Le pont filtre le trafic par l’adresse MAC : ne pas forwarderles (transférer) trames destinées au même segment  
+>  * Le pont filtre le trafic par l’adresse MAC : ne pas forwarderles (transférer) trames destinées au même segment    
 
-Nous allons activer la connexion entre la carte *physique* eth0 de notre machine et le bridge des containers.  
+#### 3.1.1 Création du bridge NAT
 
+Après nous insérons ce qui suit dans **/etc/network/interfaces** :
+
+    auto lxc-bridge-nat
+    iface lxc-bridge-nat inet static
+        bridge_ports none
+        bridge_fd 0
+        bridge_maxwait 0
+        address 192.168.100.1
+        netmask 255.255.255.0
+        up iptables -t nat -A POSTROUTING -o enp0s3 -j MASQUERADE
+
+La règle utilise la table de correspondance de paquets de NAT (-t nat) et spécifie la chaîne intégrée POSTROUTING pour NAT (-A POSTROUTING) sur le périphérique réseau externe du pare-feu (-o enp0s3). POSTROUTING permet aux paquets d'être modifiés lorsqu'ils quittent le périphérique externe du pare-feu.  
+La cible -j MASQUERADE est spécifiée pour masquer l'adresse IP privée d'un noeud avec l'adresse IP externe du pare-feu / de la passerelle.
+
+
+Puis nous redémarrons le service *networking* :
+
+    /etc/init.d/networking restart  
+
+Nous devrions avoir cet affichage en faisant **ip a** : 
+    
+    root@debian:~# ip a
+    1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+        link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+        inet 127.0.0.1/8 scope host lo
+        valid_lft forever preferred_lft forever
+        inet6 ::1/128 scope host 
+        valid_lft forever preferred_lft forever
+    2: enp0s3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+        link/ether 08:00:27:a4:6e:b5 brd ff:ff:ff:ff:ff:ff
+        inet 192.168.0.30/24 brd 192.168.0.255 scope global dynamic enp0s3
+        valid_lft 86392sec preferred_lft 86392sec
+        inet6 fe80::a00:27ff:fea4:6eb5/64 scope link 
+        valid_lft forever preferred_lft forever
+    3: lxcbr0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default qlen 1000
+        link/ether 00:16:3e:00:00:00 brd ff:ff:ff:ff:ff:ff
+        inet 10.0.3.1/24 scope global lxcbr0
+        valid_lft forever preferred_lft forever
+    4: lxc-bridge-nat: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UNKNOWN group default qlen 1000
+        link/ether 4a:32:8b:0c:12:69 brd ff:ff:ff:ff:ff:ff
+        inet 192.168.100.1/24 brd 192.168.100.255 scope global lxc-bridge-nat
+        valid_lft forever preferred_lft forever
+        inet6 fe80::4832:8bff:fe0c:1269/64 scope link 
+        valid_lft forever preferred_lft forever
+
+Notre bridge est maintenant crée. Nous allons donc le relier à nos containers **c1**, **c2** et **c3**.
+
+#### 3.1.2 Activer la connexion entre *physique* eth0 de notre machine virtuelle et le bridge des containers
+
+Jusqu'à maintenant nous avons crée un bridge **lxcbr0** sur lequel sont reliés nos containers, et un NAT **lxc-bridge-nat** qui fera le lien entre notre bridge **lxcbr0** et l'interface réseau de la VM.  
+
+
+
+Nous allons d'abord activer le routage IP, il faut taper la commande suivante :
+
+    echo 1 > /proc/sys/net/ipv4/ip_forward  
+
+  
+Nous pouvons éditer le fichier **sysctl.conf** dans le répertoire **/etc** pour rendre cette configuration permanente en décommentant la ligne :  
+
+    # Uncomment the next line to enable packet forwarding for IPv4
+    net.ipv4.ip_forward=1  
+
+Ensuite, nous changeons la configuration des containers pour qu'ils passent par le bridge que nous venons de créer et ainsi attribuer une **ip** statique à celui-ci.  
+Pour cela, nous modifions le fichier de configuration des containers (ici nous modifions **c1**) **/var/lib/lxc/c1/config** comme suit: 
+
+    ...
+    # Network configuration
+    lxc.net.0.type = veth
+    lxc.net.0.link = lxc-bridge-nat
+    lxc.net.0.ipv4.address = 192.168.100.10/24
+    lxc.net.0.ipv4.gateway = 192.168.100.1
+    lxc.net.0.flags = up
+    lxc.net.0.hwaddr = 00:16:3e:d5:76:c8  
+
+Nous pouvons maintenant démarrer notre container **c1** :
+
+    root@debian:~# lxc-start c1
+
+Après nous nous connectons à la console de c1 : 
+
+    root@debian:~# lxc-attach c1
+
+Enfin, une fois dans c1, il faut changer le nameserver dans le fichier **/etc/resolv.conf** : 
+    
+    nameserver 192.168.0.1 
+
+Maintenant en faisant **ip a**, nous avons ceci :
+
+    1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+    5: eth0@if6: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether 00:16:3e:d5:76:c8 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 192.168.100.10/24 brd 192.168.100.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::216:3eff:fed5:76c8/64 scope link 
+       valid_lft forever preferred_lft forever
+
+Pour vérifier que tout fonctionne bien, nous pouvons *pinger* notre bridge :
+
+    root@c1:~# ping 8.8.8.8
+    PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+    64 bytes from 8.8.8.8: icmp_seq=1 ttl=53 time=12.3 ms
+    64 bytes from 8.8.8.8: icmp_seq=2 ttl=53 time=13.1 ms
+    ^C
+    --- 8.8.8.8 ping statistics ---
+    2 packets transmitted, 2 received, 0% packet loss, time 5ms
+    rtt min/avg/max/mdev = 11.423/12.247/13.054/0.678 ms
+
+
+Ou alors le serveur de google (8.8.8.8) :
+
+    root@c1:~# ping 192.168.100.1
+    PING 192.168.100.1 (192.168.100.1) 56(84) bytes of data.
+    64 bytes from 192.168.100.1: icmp_seq=1 ttl=64 time=0.076 ms
+    64 bytes from 192.168.100.1: icmp_seq=2 ttl=64 time=0.089 ms
+    ^C
+    --- 192.168.100.1 ping statistics ---
+    2 packets transmitted, 2 received, 0% packet loss, time 50ms
+    rtt min/avg/max/mdev = 0.076/0.085/0.090/0.006 ms
+
+Par contre, nous ne pouvons toujours pas *pinger* un serveur depuis leur nom de domaine :
+
+    root@c1:~# ping www.google.fr 
+    ^C
+
+Dans la suite, nous allons installer un DNS afin de palier ce problème.
