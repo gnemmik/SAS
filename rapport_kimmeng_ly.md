@@ -4,31 +4,31 @@
 
 ###  1.1 Installation du système de base
  
-Tout d'abord, pour pouvoir faire les travaux pratiques demandés, nous avons besoin d'un environnement de travail sous linux.  
-Nous avons donc crée une machine virtuelle de **8G** de disque et **4G** de RAM. à partir de VirtualBox.  
+Tout d'abord, pour pouvoir faire les travaux pratiques demandés, on a besoin d'un environnement de travail sous linux.  
+On a donc crée une machine virtuelle de **8G** de disque et **4G** de RAM. à partir de VirtualBox.  
 
-Ensuite, nous avons installé une Debian Minimal à partir du mini.iso fourni par notre encadrant sur cette machine virtuelle.  
+Ensuite, on a installé une Debian Minimal à partir du mini.iso fourni par notre encadrant sur cette machine virtuelle.  
 
-Pendant l'installation, nous avons choisi un mot de passe administrateur **root** (ce mot de passe peut être changé à tout moment avec la commande **passwd**) et crée un utilisateur *lambda* (sans droits administrateur) avec son mot de passe.  
+Pendant l'installation, on a choisi un mot de passe administrateur **root** (ce mot de passe peut être changé à tout moment avec la commande **passwd**) et crée un utilisateur *lambda* (sans droits administrateur) avec son mot de passe.  
 
 ### 1.2 Secure Shell
 
-Une fois l'installation faite, le terminal de base du système récemment installé étant pas très pratique, il est préférable de nous connecter à la nouvelle machine depuis notre propre terminal via **ssh**.  
-Sans toucher au fichier de configuation de ssh de base, nous pouvons seulement nous connecter en tant que utilisateur *lambda*.
+Une fois l'installation faite, le terminal de base du système récemment installé étant pas très pratique, il est préférable de se connecter à la nouvelle machine depuis notre propre terminal via **ssh**.  
+Sans toucher au fichier de configuation de ssh de base, on peut seulement nous connecter en tant que utilisateur *lambda*.
 
     kimmeng@shelby:~$ ssh root@192.168.0.30  
     root@192.168.0.30's password:  
     Permission denied, please try again.
 
-Par conséquent, pour pouvoir nous connecter en tant que *root* (avec les droits administrateur), nous devons ajouter la ligne suivante dans le fichier **/etc/ssh/sshd_config**.  
+Par conséquent, pour pouvoir se connecter en tant que *root* (avec les droits administrateur), on doit ajouter la ligne suivante dans le fichier **/etc/ssh/sshd_config**.  
     
     PermitRootLogin yes
 
-Cette ligne permet à *root* de se connecter en SSH ou à un utilisateur *lambda* en **su** (super-utilisateur). Ainsi, après avoir ajouter cette ligne, nous redémarrons le service **ssh** via la commande :  
+Cette ligne permet à *root* de se connecter en SSH ou à un utilisateur *lambda* en **su** (super-utilisateur). Ainsi, après avoir ajouter cette ligne, on redémarre le service **ssh** via la commande :  
 
     /etc/init.d/ssh restart  
 
-Une fois que le service **ssh** redémarré, nous pouvons enfin nous connecter en tant que *root*.
+Une fois que le service **ssh** redémarré, on peut enfin se connecter en tant que *root*.
 
 
     kimmeng@shelby:~$ ssh root@192.168.0.30  
@@ -42,13 +42,13 @@ Une fois que le service **ssh** redémarré, nous pouvons enfin nous connecter e
 
 ## 2. Mise en place des containers LXC
 ### 2.1 Installation des paquets nécessaires 
-Nous allons maintenant procéder à la mise en place des containers **lxc**. Tout d'abord, nous devons installer les paquets de **lxc** avec la commande (en tant que *root*) :  
+On va maintenant procéder à la mise en place des containers **lxc**. Tout d'abord, on doit installer les paquets de **lxc** avec la commande (en tant que *root*) :  
 
     root@debian:~# apt-get install lxc lxctl lxc-tests lxc-templates  
 
 ### 2.2 Configuration réseau par défaut des containers
 
-Par défaut sur Debian la configuration réseau pour les containers est désactivée, alors pour avoir du réseau dans nos containers, nous devons mettre à jour le fichier de configuration par défaut des containers de **lxc** comme ci-dessous:  
+Par défaut sur Debian la configuration réseau pour les containers est désactivée, alors pour avoir du réseau dans nos containers, on doit mettre à jour le fichier de configuration par défaut des containers de **lxc** comme ci-dessous:  
 
 D'abord le fichier **/etc/lxc/default.conf** : 
 
@@ -65,11 +65,11 @@ Et mettre à **true** l'option **USE_LXC_BRIDGE** dans le fichier **/etc/default
     
     USE_LXC_BRIDGE="true"  # overridden in lxc-net  
 
-Puis nous redémarrons le service **lxc-net** avec :
+Puis on redémarre le service **lxc-net** avec :
 
     systemctl restart lxc-net.service
 
-Si tout s'est bien passé, normalement en faisant **ip a**, nous devrions avoir les affichages ci-dessous :
+Si tout s'est bien passé, normalement en faisant **ip a**, on doit avoir les affichages ci-dessous :
 
     root@debian:~# ip a
     1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
@@ -91,27 +91,27 @@ Si tout s'est bien passé, normalement en faisant **ip a**, nous devrions avoir 
 
 ### 2.3 Création d'un premier container
 
-Ensuite, nous pouvons créer notre premier container **c1** avec la commande :  
+Ensuite, on peut créer notre premier container **c1** avec la commande :  
 
     root@debian:~# lxc-create -n c1 -t download  
 
 **-n** : pour spécifier le nom du container  
 **-t** : pour spécifier le template  
 
-Nous précisons ensuite quel type de distribution nous voulons installer :
+On précise ensuite quel type de distribution on veut installer :
 
     Distribution: debian
     Release: buster
     Architecture: amd64  
 
-Une fois que notre container est installé, nous pouvons le voir avec **lxc-ls** qui permet de lister les containers installés : 
+Une fois que notre container est installé, on peut le voir avec **lxc-ls** qui permet de lister les containers installés : 
 
     root@debian:~# lxc-ls
     c1  
 
-Nous pouvons ensuite démarrer notre container avec la commande :  
+On peut ensuite démarrer notre container avec la commande :  
     
-    root@debian:~# lxc-start -n c1 -d
+    root@debian:~# lxc-start -n c1
 
 Pour vérifier que le container est bien démarré : 
 
@@ -155,14 +155,14 @@ Pour arrêter le container **c1** :
 
 ### 2.4 Clonage des containers
 
-Nous allons maintenant cloner **c1** en **c2** puis en **c3** (remarque : il faut au préalable arrêter **c1**) :
+On va maintenant cloner **c1** en **c2** puis en **c3** (remarque : il faut au préalable arrêter **c1**) :
 
     root@debian:~# lxc-copy -n c1 -N c2
     root@debian:~# lxc-copy -n c1 -N c3
     root@debian:~# lxc-ls
     c1   c2   c3
 
-Nous pouvons remarquer que le fichier de configuration de **c2** est similaire à celui de **c1**, les seuls changements notables sont l'adresse MAC et l'ajout de deux lignes supplémentaires à la fin du fichier : 
+On peut remarquer que le fichier de configuration de **c2** est similaire à celui de **c1**, les seuls changements notables sont l'adresse MAC et l'ajout de deux lignes supplémentaires à la fin du fichier : 
 
     root@debian:~# cat /var/lib/lxc/c2/config 
     ...
@@ -203,11 +203,11 @@ La règle utilise la table de correspondance de paquets de NAT (-t nat) et spéc
 La cible -j MASQUERADE est spécifiée pour masquer l'adresse IP privée d'un noeud avec l'adresse IP externe du pare-feu / de la passerelle.
 
 
-Puis nous redémarrons le service *networking* :
+Puis on redémarre le service *networking* :
 
     /etc/init.d/networking restart  
 
-Nous devrions avoir cet affichage en faisant **ip a** : 
+On doit avoir cet affichage en faisant **ip a** : 
     
     root@debian:~# ip a
     1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
@@ -233,26 +233,29 @@ Nous devrions avoir cet affichage en faisant **ip a** :
         inet6 fe80::4832:8bff:fe0c:1269/64 scope link 
         valid_lft forever preferred_lft forever
 
-Notre bridge est maintenant crée. Nous allons donc le relier à nos containers **c1**, **c2** et **c3**.
+Notre bridge est maintenant crée. On va donc le relier à nos containers **c1**, **c2** et **c3**.
 
-#### 3.1.2 Activer la connexion entre *physique* eth0 de notre machine virtuelle et le bridge des containers
+#### 3.1.2 Activer la connexion entre *physique* de notre machine virtuelle et le bridge des containers
 
-Jusqu'à maintenant nous avons crée un bridge **lxcbr0** sur lequel sont reliés nos containers, et un NAT **lxc-bridge-nat** qui fera le lien entre notre bridge **lxcbr0** et l'interface réseau de la VM.  
+Jusqu'à maintenant on a crée un bridge **lxcbr0** sur lequel sont reliés nos containers, et un NAT **lxc-bridge-nat** qui fera le lien entre notre bridge **lxcbr0** et l'interface réseau de la VM.  
 
 
 
-Nous allons d'abord activer le routage IP, il faut taper la commande suivante :
+On va d'abord activer le routage IP, pour ce faire il faut taper la commande suivante :
 
     echo 1 > /proc/sys/net/ipv4/ip_forward  
 
   
-Nous pouvons éditer le fichier **sysctl.conf** dans le répertoire **/etc** pour rendre cette configuration permanente en décommentant la ligne :  
+On peut éditer le fichier **sysctl.conf** dans le répertoire **/etc** pour rendre cette configuration permanente en décommentant la ligne :  
 
     # Uncomment the next line to enable packet forwarding for IPv4
     net.ipv4.ip_forward=1  
 
-Ensuite, nous changeons la configuration des containers pour qu'ils passent par le bridge que nous venons de créer et ainsi attribuer une **ip** statique à celui-ci.  
-Pour cela, nous modifions le fichier de configuration des containers (ici nous modifions **c1**) **/var/lib/lxc/c1/config** comme suit: 
+
+### 3.1 Configuration réseau du container c1 (notre futur server DHCP)
+
+Ensuite, on change la configuration des containers pour qu'ils passent par le bridge qu'on vient de créer et ainsi attribuer une **ip** statique à celui-ci tout en lui indiquant quel est sa *gateway* par défaut.  
+Pour cela, on modifie le fichier de configuration des containers (ici on modifie **c1**) **/var/lib/lxc/c1/config** comme suit: 
 
     ...
     # Network configuration
@@ -263,11 +266,11 @@ Pour cela, nous modifions le fichier de configuration des containers (ici nous m
     lxc.net.0.flags = up
     lxc.net.0.hwaddr = 00:16:3e:d5:76:c8  
 
-Nous pouvons maintenant démarrer notre container **c1** :
+On peut maintenant démarrer notre container **c1** :
 
     root@debian:~# lxc-start c1
 
-Après nous nous connectons à la console de c1 : 
+Après on se connectons à la console de c1 : 
 
     root@debian:~# lxc-attach c1
 
@@ -275,14 +278,9 @@ Enfin, une fois dans c1, il faut changer le nameserver dans le fichier **/etc/re
     
     nameserver 192.168.0.1 
 
-Maintenant en faisant **ip a**, nous avons ceci :
+Maintenant en faisant **ip a**, on a ceci :
 
-    1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
-    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
-    inet 127.0.0.1/8 scope host lo
-       valid_lft forever preferred_lft forever
-    inet6 ::1/128 scope host 
-       valid_lft forever preferred_lft forever
+    ...
     5: eth0@if6: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
     link/ether 00:16:3e:d5:76:c8 brd ff:ff:ff:ff:ff:ff link-netnsid 0
     inet 192.168.100.10/24 brd 192.168.100.255 scope global eth0
@@ -290,19 +288,7 @@ Maintenant en faisant **ip a**, nous avons ceci :
     inet6 fe80::216:3eff:fed5:76c8/64 scope link 
        valid_lft forever preferred_lft forever
 
-Pour vérifier que tout fonctionne bien, nous pouvons *pinger* notre bridge :
-
-    root@c1:~# ping 8.8.8.8
-    PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
-    64 bytes from 8.8.8.8: icmp_seq=1 ttl=53 time=12.3 ms
-    64 bytes from 8.8.8.8: icmp_seq=2 ttl=53 time=13.1 ms
-    ^C
-    --- 8.8.8.8 ping statistics ---
-    2 packets transmitted, 2 received, 0% packet loss, time 5ms
-    rtt min/avg/max/mdev = 11.423/12.247/13.054/0.678 ms
-
-
-Ou alors le serveur de google (8.8.8.8) :
+Pour vérifier que tout fonctionne bien, on peut *pinger* notre bridge :
 
     root@c1:~# ping 192.168.100.1
     PING 192.168.100.1 (192.168.100.1) 56(84) bytes of data.
@@ -313,9 +299,168 @@ Ou alors le serveur de google (8.8.8.8) :
     2 packets transmitted, 2 received, 0% packet loss, time 50ms
     rtt min/avg/max/mdev = 0.076/0.085/0.090/0.006 ms
 
-Par contre, nous ne pouvons toujours pas *pinger* un serveur depuis leur nom de domaine :
+
+Ou alors le serveur de google (8.8.8.8) :
+
+    
+    root@c1:~# ping 8.8.8.8
+    PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+    64 bytes from 8.8.8.8: icmp_seq=1 ttl=53 time=12.3 ms
+    64 bytes from 8.8.8.8: icmp_seq=2 ttl=53 time=13.1 ms
+    ^C
+    --- 8.8.8.8 ping statistics ---
+    2 packets transmitted, 2 received, 0% packet loss, time 5ms
+    rtt min/avg/max/mdev = 11.423/12.247/13.054/0.678 ms
+
+Par contre, on ne peut toujours pas *pinger* un serveur depuis leur nom de domaine :
 
     root@c1:~# ping www.google.fr 
     ^C
 
-Dans la suite, nous allons installer un DNS afin de palier ce problème.
+Dans la suite, on va installer un DNS afin de palier ce problème.
+
+
+## 4. Installation d'un serveur DHCP  
+
+### 4.1 Configurer le réseau du serveur DHCP  
+
+Quand on configure un réseau local, un client a besoin de certaines informations comme l'adresse IP de son interface, l'adresse IP d'un serveur de nom de domaine au moins et l'adresse IP d'un serveur du réseau qui sert de routeur vers internet.  
+Dans une configuration manuelle, on doit entrer ces informations pour chaque nouveau client.  
+Avec le Dynamic Host Configuration Protocol (DHCP), les ordinateurs font cela tout seul, à votre place.
+
+Pour une configuration simple de son réseau, on a juste à configurer un seul container (par exemple **c1**) comme serveur DHCP et tous les autres comme client DHCP (**c2**, et **c3**).
+
+Dans le container **c1**, 
+
+    root@c1:~# apt-get install isc-dhcp-server  
+
+
+### 4.2 Configurer le service DHCP sur le serveur/container c1
+
+On modifie ensuite la configuration de **DHCP** dans le fichier **/etc/dhcp/dhcpd.conf** :  
+
+    # option definitions common to all supported networks...
+    option domain-name "mydebian";
+    option domain-name-servers 89.2.0.1, 89.2.0.2; # adresses du serveur DNS fournie par le fournisseur d'accès à Internet
+
+    # Configuration de votre sous-r  seau (subnet) souhait   :
+    subnet 192.168.100.0 netmask 255.255.255.0 {
+        range 192.168.100.128 192.168.100.192;
+        option subnet-mask 255.255.255.0;
+        option broadcast-address 192.168.100.255;
+        option routers 192.168.100.10;
+    }
+
+On précise l'interface dans **/etc/default/isc-dhcp-server** : 
+
+    INTERFACESv4="eth0"  
+
+Enfin, on ajoute dans **/etc/network/interfaces** : 
+
+    # The loopback network interface
+    auto lo
+    iface lo inet loopback
+
+    auto eth0
+    iface eth0 inet static
+        address 192.168.100.10
+        netmask 255.255.255.0
+        broadcast 192.168.100.255
+        gateway 192.168.100.1
+
+Pour que ces changements soient effectifs, on doit redémarrer le démon DHCP. Il faut exécuter en tant que superutlilisateur la commande : 
+
+    root@c1:~# service isc-dhcp-server restart  
+
+On peut ensuite voir que le service est bien démarré avec :  
+
+    root@c1:~# service isc-dhcp-server status 
+    ● isc-dhcp-server.service - LSB: DHCP server
+    Loaded: loaded (/etc/init.d/isc-dhcp-server; generated)
+    Active: active (running) since Wed 2020-05-06 12:52:44 UTC; 11s ago
+        Docs: man:systemd-sysv-generator(8)
+    Process: 700 ExecStart=/etc/init.d/isc-dhcp-server start (code=exited, status=0/SUCCESS)
+        Tasks: 2 (limit: 4696)
+    Memory: 8.9M
+    CGroup: /system.slice/isc-dhcp-server.service
+            ├─485 /usr/sbin/dhcpd -4 -q -cf /etc/dhcp/dhcpd.conf
+            └─712 /usr/sbin/dhcpd -4 -q -cf /etc/dhcp/dhcpd.conf eth0
+
+
+### 4.3 Configuration des postes clients  
+
+Maintenant que notre serveur DHCP est bien opérationnel, on va configurer les machines clientes.  
+Pour une configuration de base, il faut modifier le fichier **/etc/network/interfaces**. Si on veut utiliser eth0 comme l'interface à configurer avec DHCP au démarrage, il faut ajouter ou modifier l'entrée eth0 : 
+    
+    auto eth0
+    iface eth0 inet dhcp    
+
+Les différents mots-clefs ont la signification suivante :  
+**auto** : l'interface est configuré au démarrage.  
+**inet** : l'interface utilise le protocole de réseau TCP/IP.  
+**dhcp** : l'interface peut être configurée avec DHCP.
+
+
+On va maintenant configurer le container **c3**, dans le fichier **/var/lib/lxc/c3/config** depuis la machine hôte : 
+
+    ...
+    lxc.net.0.link = lxc-bridge-nat
+    ...
+
+Ensuite si on rentre dans **c3**, en faisant **ip a**, on peut voir que notre serveur DHCP a attribué automatiquement une adresse IP variable (dans la plage des adresses IP disponibles) :  
+
+    root@c3:~# ip a
+    ...
+    18: eth0@if25: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+        link/ether 00:16:3e:77:ba:2b brd ff:ff:ff:ff:ff:ff link-netnsid 0
+        inet 192.168.100.128/24 brd 192.168.100.255 scope global dynamic eth0
+            valid_lft 594sec preferred_lft 594sec
+        inet6 fe80::216:3eff:fe77:ba2b/64 scope link 
+            valid_lft forever preferred_lft forever
+
+### 4.4 Configuration avancée  
+
+A présent, on va configurer le container **c2** de sorte que celui-ci reçoive systématiquement l'adresse IP 192.168.100.64.  
+Depuis la machine hôte, on va récupérer l'adresse MAC de **c2** dans  **/var/lib/lxc/c2/config**. 
+
+    lxc.net.0.hwaddr = 00:16:3e:77:ba:2b
+
+On peut réserver une adresse IP dans une plage, pour une adresse MAC donnée, il suffit de déclarer un "host" dans le "subnet".
+On doit donc modifier la configuration par defaut de DHCP dans **c1** (/etc/dhcp/dhcpd.conf) comme suit : 
+
+    # Configuration de votre sous-reseau (subnet) souhaite :
+    subnet 192.168.100.0 netmask 255.255.255.0 {
+        range 192.168.100.128 192.168.100.192;
+        option subnet-mask 255.255.255.0;
+        option broadcast-address 192.168.100.255;
+        option routers 192.168.100.10;
+
+        host c2 {
+        hardware ethernet 00:16:3e:77:ba:2b;
+        fixed-address 192.168.100.64;
+        }
+        host c3 {
+        hardware ethernet 00:16:3e:83:a4:24;
+        }
+    }
+
+On renseigne dans ce fichier les adresses MAC de nos deux machines connues (**c1** et **c2**) car on veut bloquer l'accès à notre serveur DHCP pour les machines inconnues (notre DHCP n'attribura pas d'adresse IP à ces machines).  
+
+Maintenant, on va vérifier si **c2** reçoit bien une adresse IP fixe (192.168.100.64) : 
+
+    22: eth0@if23: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether 00:16:3e:77:ba:2b brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 192.168.100.64/24 brd 192.168.100.255 scope global dynamic eth0
+       valid_lft 425sec preferred_lft 425sec
+    inet6 fe80::216:3eff:fe77:ba2b/64 scope link 
+       valid_lft forever preferred_lft forever
+
+L'adresse IP 192.168.100.64 a bien été attribué à **c2**.  
+
+On va mettre en place le *firewall* dans **c2** : 
+
+## 5. Installation d'un serveur DNS
+
+Puis, on installe le paquet :
+    
+    apt-get install bind9
