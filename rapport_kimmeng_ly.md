@@ -669,10 +669,9 @@ On a fini les modifications sur **c1**, on doit maintenant modifier le fichier *
     };  
 
 On a maintenant nos deux serveurs DNS fonctionnel.
-
-## 6. Authentification réseau, Logs, Sauvegarde  
-### 6.1 Mise en place d’un serveur d’annuaire NIS  
-#### 6.1.1 Configuration du serveur  
+ 
+## 6. Mise en place d’un serveur d’annuaire NIS  
+### 6.1 Configuration du serveur  
 
 On installe le paquet **ypserv** et ses dépendances sur la machine serveur (**c1**).  
 
@@ -705,7 +704,7 @@ On redémarre ensuite le service NIS et mettre à jour le *make*.
 
     root@c1:~# /etc/rc.d/init.d/ypserv restart
 
-#### 6.1.2 Configuration du client 
+### 6.2 Configuration du client 
 
 Sur chaque machine cliente, on installe le paquet nis, ypbind, puis yp-tools
 
